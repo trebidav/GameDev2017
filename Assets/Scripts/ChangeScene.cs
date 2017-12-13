@@ -9,7 +9,7 @@ public class ChangeScene : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        Scene = "Tutorial";
+        //Scene = "Tutorial";
         Switch = false;
 	}
 	
@@ -23,13 +23,17 @@ public class ChangeScene : MonoBehaviour {
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.gameObject.tag == "Cat"){
+        if (collision.isTrigger){
+            Debug.Log("Trigger reached exit.");
+        }
+        else if (collision.gameObject.tag == "Cat"){
             Change();
         }
 
     }
 
     public void Change(){
-        UnityEngine.SceneManagement.SceneManager.LoadScene(Scene);
+        if (Scene != "")
+            UnityEngine.SceneManagement.SceneManager.LoadScene(Scene);
     }
 }

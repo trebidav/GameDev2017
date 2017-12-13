@@ -27,20 +27,28 @@ public class CatController : MonoBehaviour {
     public Vector3 jumpHeading;
     public Vector3 jumpCurrentY;
 
+    private bool debugBool = false;
+
     // Use this for initialization
     void Start () {
         anim = this.GetComponent<Animator>();
+        jumpProgress = 0;
     }
     
     // Update is called once per frame
     void Update () {
-        if ((moveTarget - transform.position).magnitude < 0.1  )
+        if (!jumping && debugBool){
+            debugBool = false;
+            moveTarget.y = transform.position.y;
+        }
+
+        if ((moveTarget - transform.position).magnitude < 0.1f)
         {
             moving = false;
             anim.SetTrigger("Stay");
         }
 
-        if (moving)
+        if (moving && !debugBool)
         {
             // look towards the object
             if (moveTarget.x - transform.position.x < 0 && transform.localScale.x > 0 || moveTarget.x - transform.position.x > 0 && transform.localScale.x < 0)
@@ -54,43 +62,60 @@ public class CatController : MonoBehaviour {
 
         }
 
-        if (jumping && !moving){
-
-            if (transform.position.y < jumpTarget.y){
-                anim.SetTrigger("JumpUp");
-            }
-            else {
-                anim.SetTrigger("JumpDown");
-            }
-
+        if (jumping && !moving || jumping && moving && debugBool){
+            
+            //change direction
             if (jumpTarget.x - transform.position.x < 0 && transform.localScale.x > 0 || jumpTarget.x - transform.position.x > 0 && transform.localScale.x < 0){
                 transform.localScale = new Vector3(-1 * transform.localScale.x, transform.localScale.y, transform.localScale.z);
             }
 
-            if ((jumpTarget - JumpHelper.transform.position).magnitude < 0.1f){
+            //get progress and length for further purposes (animation + jump
+            jumpLengthCurrent = (jumpTarget - JumpHelper.transform.position).magnitude;
+            jumpProgress = (jumpLength - jumpLengthCurrent) / jumpLength;
+
+
+            //ANIMATION
+            if ((jumpTarget - JumpHelper.transform.position).magnitude < 0.2f){
                 jumping = false;
-                anim.SetTrigger("Stay");
+
                 transform.parent = null;
                 Destroy(JumpHelper);
+
+                anim.ResetTrigger("JumpDown");
+                anim.ResetTrigger("JumpUp");
+                anim.SetTrigger("Stay");
+
+            }
+            else {
+                if (jumpProgress < 0.5f)
+                {
+                    anim.SetTrigger("JumpUp");
+
+                }
+                else if (jumpProgress >= 0.5f)
+                {
+                    anim.SetTrigger("JumpDown");
+                }
             }
 
 
-            //JUMP HERE
-            jumpAnimSpeed = (3.0f + jumpSpeed.Evaluate(jumpProgress) * 2f);
-            jumpLengthCurrent = (jumpTarget - JumpHelper.transform.position).magnitude;
-            jumpProgress = (jumpLength - jumpLengthCurrent) / jumpLength;
-            JumpHelper.transform.position = Vector3.MoveTowards(JumpHelper.transform.position, jumpTarget, Time.deltaTime * jumpAnimSpeed);
+            //JUMP
 
+            jumpAnimSpeed = (3.0f + jumpSpeed.Evaluate(jumpProgress) * 2f);
+            JumpHelper.transform.position = Vector3.MoveTowards(JumpHelper.transform.position, jumpTarget, Time.deltaTime * jumpAnimSpeed);
             jumpCurrentY.y = jumpCurve.Evaluate(jumpProgress);
+
             transform.position = JumpHelper.transform.position + jumpCurrentY;
+
 
 
         }
         if (crawling){
-            
+
             anim.SetTrigger("Crawl");
             if (!moving) {
                 crawling = false;
+                anim.ResetTrigger("Crawl");
                 anim.SetTrigger("Stay");
                 transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y * 2, transform.localScale.z);
             }
@@ -135,6 +160,9 @@ public class CatController : MonoBehaviour {
 
         moving = true;
         moveTarget = target;
+
+
+        debugBool = true;
 
     }
 
